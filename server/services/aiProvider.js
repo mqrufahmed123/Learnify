@@ -4,22 +4,33 @@
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function generateContent(prompt) {
+async function generateContent(promptOrParts) {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not set in environment variables');
   }
 
+  let parts = [];
+  if (typeof promptOrParts === 'string') {
+    parts = [{ text: promptOrParts }];
+  } else if (Array.isArray(promptOrParts)) {
+    parts = promptOrParts;
+  } else {
+    parts = [promptOrParts];
+  }
+
   const fallbackModels = [
     process.env.GEMINI_MODEL,
-    'gemini-3.6-flash',
+    'gemini-flash-latest',
+    'gemini-3.5-flash-lite',
     'gemini-3.5-flash',
-    'gemini-2.5-flash'
+    'gemini-flash-lite-latest'
   ];
 
   // Unique list preserving order
   const modelsToTry = [...new Set(fallbackModels.filter(Boolean))];
 
   let lastError = null;
+  let isRateLimited = false;
 
   for (const model of modelsToTry) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -30,7 +41,7 @@ async function generateContent(prompt) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
+            contents: [{ parts }]
           })
         });
 
@@ -44,9 +55,12 @@ async function generateContent(prompt) {
         const errText = await response.text();
         console.error(`Gemini API error (${model}, attempt ${attempt}):`, response.status, errText);
 
-        // If 503 (Overloaded) or 429 (Rate Limit), retry after a short delay
+        if (response.status === 429) {
+          isRateLimited = true;
+        }
+
         if ((response.status === 503 || response.status === 429) && attempt < 3) {
-          await delay(attempt * 1500);
+          await delay(attempt * 2000);
           continue;
         }
 
@@ -59,6 +73,10 @@ async function generateContent(prompt) {
         }
       }
     }
+  }
+
+  if (isRateLimited) {
+    throw new Error('Google Gemini API rate limit / free quota exceeded. Please wait a few seconds and try again.');
   }
 
   throw new Error('AI service is currently experiencing high demand. Please wait a moment and try again.');
