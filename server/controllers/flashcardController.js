@@ -99,10 +99,83 @@ const deleteFlashcard = asyncHandler(async (req, res) => {
   res.json({ message: 'Flashcard deleted' });
 });
 
+const { calculateSM2, calculateFSRS, previewNextIntervals } = require('../services/srsEngine');
+
+// GET /api/flashcards/:subjectId/due (?deckId=...&cram=true&algorithm=fsrs)
+const getDueFlashcards = asyncHandler(async (req, res) => {
+  const { subjectId } = req.params;
+  const { deckId, cram, algorithm = 'fsrs' } = req.query;
+
+  const query = { subjectId, userId: req.user.id };
+  if (deckId === 'uncategorized') {
+    query.deckId = null;
+  } else if (deckId && deckId !== 'all') {
+    query.deckId = deckId;
+  }
+
+  if (cram !== 'true') {
+    query.dueDate = { $lte: new Date() };
+  }
+
+  const cards = await Flashcard.find(query).sort({ dueDate: 1 });
+
+  const cardsWithPreviews = cards.map((card) => {
+    const cardObj = card.toObject();
+    cardObj.previews = previewNextIntervals(card, algorithm);
+    return cardObj;
+  });
+
+  res.json(cardsWithPreviews);
+});
+
+const { recordUserActivity } = require('../services/streakTracker');
+
+// POST /api/flashcards/card/:id/review { rating: 1|2|3|4, algorithm: 'sm2'|'fsrs' }
+const reviewFlashcard = asyncHandler(async (req, res) => {
+  const { rating, algorithm = 'fsrs' } = req.body;
+  if (![1, 2, 3, 4].includes(Number(rating))) {
+    return res.status(400).json({ message: 'Rating must be 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy)' });
+  }
+
+  const flashcard = await Flashcard.findOne({ _id: req.params.id, userId: req.user.id });
+  if (!flashcard) return res.status(404).json({ message: 'Flashcard not found' });
+
+  const updatedStats = algorithm === 'sm2' 
+    ? calculateSM2(flashcard, Number(rating)) 
+    : calculateFSRS(flashcard, Number(rating));
+
+  Object.assign(flashcard, updatedStats);
+  await flashcard.save();
+
+  // Record daily study activity & update streak
+  const streakInfo = await recordUserActivity(req.user.id);
+
+  const nextPreviews = previewNextIntervals(flashcard, algorithm);
+
+  res.json({
+    flashcard,
+    previews: nextPreviews,
+    streakInfo
+  });
+});
+
+// GET /api/flashcards/card/:id/preview (?algorithm=fsrs)
+const getCardPreviews = asyncHandler(async (req, res) => {
+  const algorithm = req.query.algorithm || 'fsrs';
+  const flashcard = await Flashcard.findOne({ _id: req.params.id, userId: req.user.id });
+  if (!flashcard) return res.status(404).json({ message: 'Flashcard not found' });
+
+  const previews = previewNextIntervals(flashcard, algorithm);
+  res.json(previews);
+});
+
 module.exports = {
   generateFlashcards,
   createFlashcard,
   getFlashcards,
+  getDueFlashcards,
+  reviewFlashcard,
+  getCardPreviews,
   updateFlashcard,
   deleteFlashcard
 };

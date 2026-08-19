@@ -69,20 +69,37 @@ const deleteDeck = asyncHandler(async (req, res) => {
 const getCalculatorStats = asyncHandler(async (req, res) => {
   const { subjectId } = req.params;
 
-  const [totalCards, aiCardsCount, manualCardsCount, uncategorizedCards, decks] = await Promise.all([
+  const now = new Date();
+
+  const [
+    totalCards, 
+    aiCardsCount, 
+    manualCardsCount, 
+    uncategorizedCards, 
+    dueCardsCount,
+    learningCardsCount,
+    reviewCardsCount,
+    newCardsCount,
+    decks
+  ] = await Promise.all([
     Flashcard.countDocuments({ subjectId, userId: req.user.id }),
     Flashcard.countDocuments({ subjectId, userId: req.user.id, source: 'ai' }),
     Flashcard.countDocuments({ subjectId, userId: req.user.id, source: 'manual' }),
     Flashcard.countDocuments({ subjectId, userId: req.user.id, deckId: null }),
+    Flashcard.countDocuments({ subjectId, userId: req.user.id, dueDate: { $lte: now } }),
+    Flashcard.countDocuments({ subjectId, userId: req.user.id, state: { $in: ['learning', 'relearning'] } }),
+    Flashcard.countDocuments({ subjectId, userId: req.user.id, state: 'review', dueDate: { $gt: now } }),
+    Flashcard.countDocuments({ subjectId, userId: req.user.id, $or: [{ state: 'new' }, { reps: 0 }] }),
     Deck.find({ subjectId, userId: req.user.id }).sort({ name: 1 })
   ]);
 
   const deckBreakdown = await Promise.all(
     decks.map(async (deck) => {
-      const [total, ai, manual] = await Promise.all([
+      const [total, ai, manual, due] = await Promise.all([
         Flashcard.countDocuments({ deckId: deck._id }),
         Flashcard.countDocuments({ deckId: deck._id, source: 'ai' }),
-        Flashcard.countDocuments({ deckId: deck._id, source: 'manual' })
+        Flashcard.countDocuments({ deckId: deck._id, source: 'manual' }),
+        Flashcard.countDocuments({ deckId: deck._id, dueDate: { $lte: now } })
       ]);
 
       return {
@@ -91,7 +108,8 @@ const getCalculatorStats = asyncHandler(async (req, res) => {
         topic: deck.topic,
         totalCards: total,
         aiCards: ai,
-        manualCards: manual
+        manualCards: manual,
+        dueCards: due
       };
     })
   );
@@ -102,6 +120,10 @@ const getCalculatorStats = asyncHandler(async (req, res) => {
     aiCardsCount,
     manualCardsCount,
     uncategorizedCards,
+    dueCardsCount,
+    learningCardsCount,
+    reviewCardsCount,
+    newCardsCount,
     deckBreakdown
   });
 });

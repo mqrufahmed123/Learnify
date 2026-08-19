@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import { Book, Plus, LogOut, Loader2, BookOpen } from 'lucide-react';
+import { Book, Plus, LogOut, Loader2, BookOpen, Flame } from 'lucide-react';
 import api from '../api';
+import StudyStreakHeatmap from '../components/StudyStreakHeatmap';
 
 export default function Dashboard({ setAuth }) {
   const [subjects, setSubjects] = useState([]);
   const [user, setUser] = useState(null);
+  const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [newSubject, setNewSubject] = useState({ name: '', description: '' });
@@ -19,12 +21,14 @@ export default function Dashboard({ setAuth }) {
 
   const fetchData = async () => {
     try {
-      const [userRes, subjectsRes] = await Promise.all([
+      const [userRes, subjectsRes, overviewRes] = await Promise.all([
         api.get('/auth/me'),
-        api.get('/subjects')
+        api.get('/subjects'),
+        api.get('/dashboard/overview')
       ]);
       setUser(userRes.data);
       setSubjects(subjectsRes.data);
+      setOverview(overviewRes.data);
     } catch (err) {
       if (err.response?.status === 401) {
         handleLogout();
@@ -82,6 +86,13 @@ export default function Dashboard({ setAuth }) {
             <span>Logout</span>
           </button>
         </header>
+
+        {/* Daily Study Streak & Activity Heatmap */}
+        <StudyStreakHeatmap 
+          streak={overview?.studyStreak ?? user?.studyStreak ?? 0}
+          activity={overview?.studyActivity ?? user?.studyActivity ?? []}
+          lastStudyDate={overview?.lastStudyDate ?? user?.lastStudyDate ?? null}
+        />
 
         <div className="flex justify-between items-center mb-8">
           <div>

@@ -1,6 +1,6 @@
-import { Layers, Sparkles, UserCheck, Calculator, FolderKanban } from 'lucide-react';
+import { Layers, Sparkles, UserCheck, Calculator, FolderKanban, Clock, Brain, Flame, HelpCircle } from 'lucide-react';
 
-export default function CardCalculator({ stats, selectedDeckId, onSelectDeck }) {
+export default function CardCalculator({ stats, selectedDeckId, onSelectDeck, onOpenAboutModal }) {
   if (!stats) return null;
 
   const {
@@ -9,6 +9,10 @@ export default function CardCalculator({ stats, selectedDeckId, onSelectDeck }) 
     aiCardsCount = 0,
     manualCardsCount = 0,
     uncategorizedCards = 0,
+    dueCardsCount = 0,
+    learningCardsCount = 0,
+    reviewCardsCount = 0,
+    newCardsCount = 0,
     deckBreakdown = []
   } = stats;
 
@@ -17,20 +21,51 @@ export default function CardCalculator({ stats, selectedDeckId, onSelectDeck }) 
   return (
     <div className="glass-panel mb-8 p-6 animate-fade-in" style={{ border: '1px solid rgba(59, 130, 246, 0.2)' }}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-3">
           <div style={{ padding: '0.5rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: '0.5rem', color: 'var(--accent-primary)' }}>
             <Calculator size={20} />
           </div>
           <div>
-            <h3 className="text-lg font-bold">Card & Deck Calculator</h3>
-            <p className="text-xs text-secondary">Real-time card distribution & deck metrics</p>
+            <h3 className="text-lg font-bold">Card & SRS Metrics Calculator</h3>
+            <p className="text-xs text-secondary">Real-time deck stats, SM-2 / FSRS retention, & due cards queue</p>
           </div>
         </div>
+
+        {onOpenAboutModal && (
+          <button
+            onClick={onOpenAboutModal}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '0.65rem',
+              fontSize: '0.775rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              background: 'rgba(139, 92, 246, 0.15)',
+              color: '#a78bfa',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Brain size={14} /> Ebbinghaus Graph & SRS Math
+          </button>
+        )}
       </div>
 
       {/* Top Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+        <div style={{ background: dueCardsCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: dueCardsCount > 0 ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center justify-between text-xs text-secondary mb-1">
+            <span style={{ color: dueCardsCount > 0 ? '#f87171' : 'inherit', fontWeight: dueCardsCount > 0 ? 700 : 400 }}>Due Today (SRS)</span>
+            <Clock size={14} style={{ color: dueCardsCount > 0 ? '#ef4444' : '#60a5fa' }} />
+          </div>
+          <p className="text-2xl font-bold" style={{ color: dueCardsCount > 0 ? '#ef4444' : 'white' }}>{dueCardsCount}</p>
+        </div>
+
         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center justify-between text-xs text-secondary mb-1">
             <span>Total Cards</span>
@@ -41,10 +76,10 @@ export default function CardCalculator({ stats, selectedDeckId, onSelectDeck }) 
 
         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center justify-between text-xs text-secondary mb-1">
-            <span>Total Decks</span>
-            <FolderKanban size={14} style={{ color: 'var(--accent-secondary)' }} />
+            <span>Learning Cards</span>
+            <Brain size={14} style={{ color: '#fbbf24' }} />
           </div>
-          <p className="text-2xl font-bold text-primary">{totalDecks}</p>
+          <p className="text-2xl font-bold text-primary">{learningCardsCount}</p>
         </div>
 
         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -53,14 +88,6 @@ export default function CardCalculator({ stats, selectedDeckId, onSelectDeck }) 
             <Sparkles size={14} className="text-purple" />
           </div>
           <p className="text-2xl font-bold text-primary">{aiCardsCount} <span className="text-xs text-secondary font-normal">({aiPercentage}%)</span></p>
-        </div>
-
-        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center justify-between text-xs text-secondary mb-1">
-            <span>Manual Cards</span>
-            <UserCheck size={14} style={{ color: 'var(--success)' }} />
-          </div>
-          <p className="text-2xl font-bold text-primary">{manualCardsCount}</p>
         </div>
       </div>
 

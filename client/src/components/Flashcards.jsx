@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Layers, Wand2, Plus, Loader2, FolderPlus, Trash2, Tag, ArrowLeft, Folder, Sparkles, BookOpen } from 'lucide-react';
+import { Layers, Wand2, Plus, Loader2, FolderPlus, Trash2, Tag, ArrowLeft, Folder, Sparkles, BookOpen, Brain, Clock, HelpCircle, X } from 'lucide-react';
 import api from '../api';
 import CardCalculator from './CardCalculator';
 import GenerationProgressBar from './GenerationProgressBar';
+import SRSStudyModal from './SRSStudyModal';
+import SRSAboutGraph from './SRSAboutGraph';
 
 export default function Flashcards({ subjectId }) {
   const [flashcards, setFlashcards] = useState([]);
@@ -19,6 +21,8 @@ export default function Flashcards({ subjectId }) {
   const [showDeckModal, setShowDeckModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [showSRSModal, setShowSRSModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   // Form states
   const [newDeck, setNewDeck] = useState({ name: '', description: '', topic: '' });
@@ -167,7 +171,7 @@ export default function Flashcards({ subjectId }) {
       />
 
       {/* Main Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
             {selectedDeckId !== 'all' && (
@@ -189,14 +193,60 @@ export default function Flashcards({ subjectId }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3.5">
+          <button 
+            className="btn btn-secondary"
+            onClick={() => setShowAboutModal(true)}
+            style={{
+              width: 'auto',
+              height: '42px',
+              padding: '0.75rem 1.15rem',
+              fontSize: '0.85rem',
+              whiteSpace: 'nowrap',
+              borderColor: 'rgba(139, 92, 246, 0.4)',
+              color: '#a78bfa',
+              background: 'rgba(139, 92, 246, 0.1)'
+            }}
+          >
+            <HelpCircle size={16} /> How SRS Works
+          </button>
+
+          <button 
+            onClick={() => setShowSRSModal(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              height: '42px',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '0.75rem',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+              color: '#ffffff',
+              border: 'none',
+              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.45)',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Brain size={17} /> 
+            <span>SRS Study Session</span>
+            <span style={{ background: 'rgba(255,255,255,0.25)', padding: '0.15rem 0.55rem', borderRadius: '9999px', fontSize: '0.75rem', marginLeft: '0.15rem' }}>
+              {calculatorStats?.dueCardsCount || 0} Due
+            </span>
+          </button>
+
           <button 
             className="btn btn-secondary"
             onClick={() => setShowDeckModal(true)}
-            style={{ width: 'auto', fontSize: '0.85rem' }}
+            style={{ width: 'auto', height: '42px', padding: '0.75rem 1.15rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
           >
             <FolderPlus size={16} /> New Deck
           </button>
+
           <button 
             className="btn btn-secondary"
             onClick={() => {
@@ -206,10 +256,11 @@ export default function Flashcards({ subjectId }) {
               }));
               setShowManualModal(true);
             }}
-            style={{ width: 'auto', fontSize: '0.85rem' }}
+            style={{ width: 'auto', height: '42px', padding: '0.75rem 1.15rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
           >
             <Plus size={16} /> New Card
           </button>
+
           <button 
             className="btn btn-primary"
             onClick={() => {
@@ -221,7 +272,7 @@ export default function Flashcards({ subjectId }) {
               setShowGenerateModal(true);
             }}
             disabled={generating}
-            style={{ width: 'auto', fontSize: '0.85rem' }}
+            style={{ width: 'auto', height: '42px', padding: '0.75rem 1.25rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
           >
             <Wand2 size={16} /> Topic AI Generate
           </button>
@@ -233,6 +284,7 @@ export default function Flashcards({ subjectId }) {
         stats={calculatorStats} 
         selectedDeckId={selectedDeckId} 
         onSelectDeck={(deckId) => setSelectedDeckId(deckId)} 
+        onOpenAboutModal={() => setShowAboutModal(true)}
       />
 
       {/* Decks Folder Grid View (Shown when viewing 'all' decks) */}
@@ -340,9 +392,35 @@ export default function Flashcards({ subjectId }) {
                     <span className="font-semibold text-blue">
                       {deck.stats?.totalCards || 0} Flashcards
                     </span>
-                    <span className="text-secondary flex items-center gap-1 font-medium hover:text-white">
-                      Open Deck →
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDeckId(deck._id);
+                          setShowSRSModal(true);
+                        }}
+                        style={{
+                          background: 'rgba(139, 92, 246, 0.2)',
+                          border: '1px solid rgba(139, 92, 246, 0.4)',
+                          color: '#a78bfa',
+                          padding: '0.25rem 0.55rem',
+                          borderRadius: '0.4rem',
+                          fontSize: '0.725rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Start SRS review session for this deck"
+                      >
+                        <Brain size={12} /> Study SRS
+                      </button>
+                      <span className="text-secondary flex items-center gap-1 font-medium hover:text-white">
+                        Open →
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -437,7 +515,24 @@ export default function Flashcards({ subjectId }) {
                     </div>
                     
                     <p className="text-sm font-medium px-2 leading-snug">{card.question}</p>
-                    <p style={{ position: 'absolute', bottom: '0.75rem', fontSize: '0.65rem', color: 'var(--text-muted)' }}>Click card to flip 🔄</p>
+                    
+                    <div style={{ position: 'absolute', bottom: '0.6rem', left: '0.75rem', right: '0.75rem' }} className="flex justify-between items-center text-xs">
+                      <span style={{
+                        fontSize: '0.6rem',
+                        fontWeight: 700,
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '0.25rem',
+                        background: !card.dueDate || new Date(card.dueDate) <= new Date()
+                          ? 'rgba(239, 68, 68, 0.2)'
+                          : 'rgba(16, 185, 129, 0.2)',
+                        color: !card.dueDate || new Date(card.dueDate) <= new Date()
+                          ? '#f87171'
+                          : '#34d399'
+                      }}>
+                        {!card.dueDate || new Date(card.dueDate) <= new Date() ? '• Due Now' : `Due: ${new Date(card.dueDate).toLocaleDateString()}`}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Click to flip 🔄</span>
+                    </div>
                   </div>
                   
                   {/* Back (Answer) */}
@@ -623,6 +718,57 @@ export default function Flashcards({ subjectId }) {
                 <button type="submit" className="btn btn-primary">Save Card</button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* SRS Interactive Study Modal */}
+      <SRSStudyModal
+        subjectId={subjectId}
+        selectedDeckId={selectedDeckId}
+        isOpen={showSRSModal}
+        onClose={() => setShowSRSModal(false)}
+        onSessionComplete={() => {
+          Promise.all([fetchFlashcards(), fetchDecks(), fetchCalculatorStats()]);
+        }}
+      />
+
+      {/* About SRS & Forgetting Curve Interactive Modal */}
+      {showAboutModal && createPortal(
+        <div className="modal-backdrop animate-fade-in" style={{ zIndex: 1000, background: 'rgba(5, 8, 22, 0.85)', backdropFilter: 'blur(16px)' }}>
+          <div 
+            style={{
+              width: '100%',
+              maxWidth: '860px',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              borderRadius: '1.5rem',
+              position: 'relative'
+            }}
+          >
+            <button 
+              onClick={() => setShowAboutModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                zIndex: 10,
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+            <SRSAboutGraph />
           </div>
         </div>,
         document.body
