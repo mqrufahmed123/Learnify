@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HelpCircle, RefreshCw, Wand2, Loader2, ArrowLeft } from 'lucide-react';
+import { HelpCircle, RefreshCw, Wand2, Loader2, ArrowLeft, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import api from '../api';
 import GenerationProgressBar from './GenerationProgressBar';
 
@@ -12,6 +12,7 @@ export default function Quizzes({ subjectId }) {
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [quizResult, setQuizResult] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(null); // attemptId being loaded
 
   useEffect(() => {
     fetchHistory();
@@ -41,6 +42,20 @@ export default function Quizzes({ subjectId }) {
       alert('Failed to generate quiz. Please ensure you have uploaded documents.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleViewAttempt = async (attemptId) => {
+    setReviewLoading(attemptId);
+    try {
+      const { data } = await api.get(`/quiz/attempt/${attemptId}`);
+      setActiveQuiz(null);
+      setQuizResult(data);
+    } catch (err) {
+      console.error('Failed to load attempt:', err);
+      alert('Could not load the selected quiz attempt. Please try again.');
+    } finally {
+      setReviewLoading(null);
     }
   };
 
@@ -361,22 +376,76 @@ export default function Quizzes({ subjectId }) {
           <p className="text-secondary">Generate your first quiz to start testing your knowledge.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {history.map(attempt => {
             const percentage = Math.round((attempt.score / attempt.totalQuestions) * 100);
+            const scoreColor = percentage >= 70 ? '#10b981' : percentage >= 40 ? '#f59e0b' : '#ef4444';
+            const isLoading = reviewLoading === attempt._id;
             return (
-              <div key={attempt._id} className="glass-panel flex items-center justify-between transition-all hover-scale" style={{ padding: '1.25rem 1.5rem' }}>
-                <div>
-                  <h4 className="font-medium text-primary">Quiz Attempt</h4>
-                  <p className="text-sm text-secondary mt-1">{new Date(attempt.createdAt).toLocaleString()}</p>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <p style={{ fontSize: '1.25rem', fontWeight: 700, color: percentage >= 70 ? 'var(--success)' : percentage >= 40 ? 'var(--warning)' : 'var(--danger)' }}>
-                      {percentage}%
-                    </p>
-                    <p className="text-xs text-secondary">{attempt.score}/{attempt.totalQuestions} correct</p>
+              <div
+                key={attempt._id}
+                onClick={() => !isLoading && handleViewAttempt(attempt._id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '0.875rem',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                  cursor: isLoading ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  gap: '1rem',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.25)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {/* Left: score ring + date */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+                  {/* Score circle */}
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    background: `rgba(${scoreColor === '#10b981' ? '16,185,129' : scoreColor === '#f59e0b' ? '245,158,11' : '239,68,68'}, 0.12)`,
+                    border: `2px solid ${scoreColor}`,
+                  }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{percentage}%</span>
                   </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 600, color: '#f1f5f9', fontSize: '0.9rem', marginBottom: '0.2rem' }}>
+                      {attempt.quizId?.title || 'Quiz Attempt'}
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                      {new Date(attempt.createdAt).toLocaleString()} &nbsp;·&nbsp;
+                      <span style={{ color: scoreColor }}>{attempt.score}/{attempt.totalQuestions} correct</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Review button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                  {isLoading ? (
+                    <Loader2 size={18} style={{ color: '#60a5fa', animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                      fontSize: '0.78rem', fontWeight: 600, color: '#60a5fa',
+                      padding: '0.3rem 0.75rem', borderRadius: '0.5rem',
+                      background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)',
+                    }}>
+                      Review <ChevronRight size={14} />
+                    </span>
+                  )}
                 </div>
               </div>
             );

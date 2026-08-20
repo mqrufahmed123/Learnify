@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useParams, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, FileText, MessageSquare, Layers, HelpCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { BookOpen, FileText, MessageSquare, Layers, HelpCircle, ArrowLeft, Loader2, BarChart2 } from 'lucide-react';
 import api from '../api';
 
 import Documents from '../components/Documents';
 import Chat from '../components/Chat';
 import Flashcards from '../components/Flashcards';
 import Quizzes from '../components/Quizzes';
+import Analytics from '../components/Analytics';
 
 export default function SubjectView() {
   const { id } = useParams();
@@ -41,10 +42,11 @@ export default function SubjectView() {
   if (!subject) return null;
 
   const navItems = [
-    { name: 'Documents', path: '', icon: FileText },
-    { name: 'Chat', path: '/chat', icon: MessageSquare },
-    { name: 'Flashcards', path: '/flashcards', icon: Layers },
-    { name: 'Quizzes', path: '/quizzes', icon: HelpCircle },
+    { name: 'Documents', path: '',          icon: FileText   },
+    { name: 'Chat',      path: '/chat',     icon: MessageSquare },
+    { name: 'Flashcards',path: '/flashcards',icon: Layers    },
+    { name: 'Quizzes',   path: '/quizzes',  icon: HelpCircle },
+    { name: 'Analytics', path: '/analytics',icon: BarChart2  },
   ];
 
   return (
@@ -100,6 +102,7 @@ export default function SubjectView() {
             <Route path="/chat" element={<Chat subjectId={id} />} />
             <Route path="/flashcards" element={<Flashcards subjectId={id} />} />
             <Route path="/quizzes" element={<Quizzes subjectId={id} />} />
+            <Route path="/analytics" element={<Analytics subjectId={id} />} />
           </Routes>
         </div>
       </main>

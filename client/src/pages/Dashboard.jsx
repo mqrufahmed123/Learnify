@@ -90,6 +90,7 @@ export default function Dashboard({ setAuth }) {
         {/* Daily Study Streak & Activity Heatmap */}
         <StudyStreakHeatmap 
           streak={overview?.studyStreak ?? user?.studyStreak ?? 0}
+          longestStreak={overview?.longestStreak ?? user?.longestStreak ?? 0}
           activity={overview?.studyActivity ?? user?.studyActivity ?? []}
           lastStudyDate={overview?.lastStudyDate ?? user?.lastStudyDate ?? null}
         />
