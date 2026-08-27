@@ -353,3 +353,105 @@ input:focus, textarea:focus, select:focus {
   padding: 1rem;
   overflow-y: auto;
 }
+
+@media (max-width: 700px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .main-content {
+    padding: 1rem;
+    max-width: none;
+  }
+
+  .glass-panel {
+    padding: 1.25rem;
+    border-radius: 1rem;
+  }
+
+  .glass-header {
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .glass-header h1 {
+    font-size: 1rem;
+  }
+
+  .glass-header p {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-container {
+    display: block;
+    min-width: 0;
+  }
+
+  .subject-sidebar {
+    width: 100% !important;
+    padding: 0.75rem 1rem !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+  }
+
+  .subject-sidebar > div:first-child {
+    padding-bottom: 0.75rem !important;
+  }
+
+  .subject-sidebar > div:first-child > a {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .subject-sidebar nav {
+    display: flex;
+    flex-direction: row;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .subject-sidebar nav a {
+    flex: 0 0 auto;
+    padding: 0.6rem 0.75rem !important;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .subject-main {
+    height: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    padding-top: 1.25rem;
+  }
+
+  .subject-main > div {
+    overflow: visible !important;
+  }
+
+  .grid-cols-auto {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .text-2xl {
+    font-size: 1.35rem;
+  }
+
+  .auth-wrapper {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    padding: 1.25rem;
+  }
+
+  .auth-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+}

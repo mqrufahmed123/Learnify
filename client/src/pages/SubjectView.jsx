@@ -52,7 +52,7 @@ export default function SubjectView() {
   return (
     <div className="app-container animate-fade-in">
       {/* Sidebar */}
-      <aside className="glass-panel" style={{ width: '280px', borderRadius: '0', borderLeft: 'none', borderTop: 'none', borderBottom: 'none', display: 'flex', flexDirection: 'column' }}>
+      <aside className="glass-panel subject-sidebar" style={{ width: '280px', borderRadius: '0', borderLeft: 'none', borderTop: 'none', borderBottom: 'none', display: 'flex', flexDirection: 'column' }}>
         <div style={{ paddingBottom: '2rem' }}>
           <Link to="/dashboard" className="flex items-center gap-2 text-secondary hover-scale" style={{ fontSize: '0.875rem', marginBottom: '2rem' }}>
             <ArrowLeft size={16} />
@@ -95,7 +95,7 @@ export default function SubjectView() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="main-content" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <main className="main-content subject-main" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         <div style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
           <Routes>
             <Route path="/" element={<Documents subjectId={id} />} />
